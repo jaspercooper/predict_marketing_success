@@ -5,3 +5,4 @@ google-generativeai
 scikit-learn
 PyPDF2
 matplotlib
+PyYAML
