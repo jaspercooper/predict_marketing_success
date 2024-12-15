@@ -19,3 +19,6 @@ __pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# Some reference files should be downloaded from the source:
+references/API_documentation/SAM_entity_API/SAM_MASTER_EXTRACT_MAPPING_Oct2024.xlsx
