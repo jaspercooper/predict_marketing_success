@@ -14,8 +14,29 @@ from scripts.config import RAW_DATA_DIR
 import requests
 # JSON for handling API queries
 import json
+# For date handling:
+import datetime
 
-def fetch_awards(ueis, year):
+def fetch_awards(ueis, year, save_unsuccessful = False):
+    """
+    Fetches award data for a list of UEIs for a given year using the USAspending API.
+
+    Parameters:
+        ueis (list): A list of Unique Entity Identifiers (UEIs). Must not be empty.
+        year (int): The year for which data is to be fetched. Must be a valid year.
+        save_unsuccessful (bool): Whether to save unsuccessful responses to a file. Default is False.
+
+    Returns:
+        None: Saves successful responses to a JSON file.
+    """
+
+    # Validate parameters
+    if not isinstance(ueis, list) or not ueis:
+        raise ValueError("`ueis` must be a non-empty list of UEI strings.")
+
+    if not isinstance(year, int) or year < 1900 or year > datetime.now().year:
+        raise ValueError("`year` must be a valid integer representing a year (e.g., 2023).")
+
     # Initialize an empty list to store JSON responses
     successful_responses = []
     unsuccessful_responses = []
@@ -47,3 +68,10 @@ def fetch_awards(ueis, year):
     with open(save_location, "w") as file:
         json.dump(successful_responses, file)
         print(f"successful_responses saved to {save_location}")
+
+    # Optionally save unsuccessful responses
+    if save_unsuccessful:
+        error_save_location = f"{RAW_DATA_DIR}/raw_award_data/unsuccessful_award_fetch_{year}.json"
+        with open(error_save_location, "w") as file:
+            json.dump(unsuccessful_responses, file, indent=4)
+            print(f"Unsuccessful responses saved to {error_save_location}")
