@@ -10,12 +10,18 @@ Notes:
 
 # Get file paths
 from scripts.config import RAW_DATA_DIR
+# Get utility functions
+from scripts.utils import subset_string, comma_join
 # Requests for API queries
 import requests
 # JSON for handling API queries
 import json
 # For date handling:
 import datetime
+# For navigating OS
+import os
+# for dataframes
+import pandas as pd
 
 def fetch_awards(ueis, year, save_unsuccessful = False):
     """
@@ -31,10 +37,10 @@ def fetch_awards(ueis, year, save_unsuccessful = False):
     """
 
     # Validate parameters
-    if not isinstance(ueis, list) or not ueis:
-        raise ValueError("`ueis` must be a non-empty list of UEI strings.")
+    if not isinstance(ueis, (list, pd.Series)) or not ueis:
+        raise ValueError("The 'ueis' parameter must be a non-empty list or pandas Series.")
 
-    if not isinstance(year, int) or year < 1900 or year > datetime.now().year:
+    if not isinstance(year, int) or not year:
         raise ValueError("`year` must be a valid integer representing a year (e.g., 2023).")
 
     # Initialize an empty list to store JSON responses
