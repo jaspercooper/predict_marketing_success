@@ -1,18 +1,23 @@
-# Get file paths
-from scripts.config import RAW_DATA_DIR
 import requests
 import re
 import base64
-# Import pathlib for path handling
 from pathlib import Path
 import os
 
+# Import RAW_DATA_DIR from config
+from scripts.config import RAW_DATA_DIR
+
 def fetch_raw_pdf_data(uei):
     """
-    Downloads the base64 data needed to build the PDF embedded in the `gon.pdf_data` variable of a given page.
+    Fetches the Base64 data needed to build the PDF embedded in the `gon.pdf_data` variable of a given page.
 
     Args:
-        uei (str): The unique identifier for the capability page
+        uei (str): The unique identifier for the capability page.
+
+    Returns:
+        dict: A dictionary containing:
+            - pdf_data_base64 (str): The Base64-encoded PDF data or a message indicating no data is available.
+            - uei (str): The unique identifier for the PDF.
     """
     base_url = f"https://certify.sba.gov/capabilities/{uei}"
     headers = {
@@ -41,16 +46,21 @@ def fetch_raw_pdf_data(uei):
         return {"pdf_data_base64": pdf_data_base64, "uei": uei}
     except Exception as e:
         print(f"Error fetching data for UEI {uei} from {base_url}: {e}")
+        return None
 
 def extract_pdf_from_base64(fetched_base64_data):
     """
-    This function converts the raw base64 string back into raw binary data and associates it with a UEI.
+    Decodes the raw Base64 string into binary data and retains the UEI for reference.
 
     Args:
-        fetched_base64_data: This is a dictionary containing pdf_data_base_64 (str), the Base64-encoded PDF data, and uei (str), the Unique Entity Identifier for the PDF.
+        fetched_base64_data (dict): Contains:
+            - pdf_data_base64 (str): The Base64-encoded PDF data.
+            - uei (str): The Unique Entity Identifier for the PDF.
 
     Returns:
-        dict: A dictionary containing the decoded PDF binary data and its UEI.
+        dict: A dictionary containing:
+            - pdf_data (bytes): The decoded binary PDF data.
+            - uei (str): The unique identifier for the PDF.
     """
     # Extract relevant objects from the dictionary
     pdf_data_base_64 = fetched_base64_data["pdf_data_base64"]
@@ -69,10 +79,13 @@ def extract_pdf_from_base64(fetched_base64_data):
 
 def output_pdf(binary_pdf_data, output_dir = f"{RAW_DATA_DIR}/raw_pdfs/"):
     """
-    This function converts the raw binary data into a pdf and outputs it to a file path.
+    Saves the binary PDF data to a file.
 
     Args:
-        binary_pdf_data (str): This is the string variable downloaded from the HTML file corresponding to the pdf
+        binary_pdf_data (dict): Contains:
+            - pdf_data (bytes): The binary PDF data.
+            - uei (str): The unique identifier for the PDF.
+        output_dir (str): The directory where PDFs will be saved.
     """
     pdf_data = binary_pdf_data["pdf_data"]
     uei = binary_pdf_data["uei"]
@@ -96,10 +109,13 @@ def output_pdf(binary_pdf_data, output_dir = f"{RAW_DATA_DIR}/raw_pdfs/"):
 
 def fetch_capability_statement_pdfs(ueis, output_dir = f"{RAW_DATA_DIR}/raw_pdfs/"):
     """
-    This function is a wrapper for those above, that takes multiple UEIs and returns their pdfs
+    Saves the binary PDF data to a file.
 
     Args:
-        ueis (str): A list of UEIs
+        binary_pdf_data (dict): Contains:
+            - pdf_data (bytes): The binary PDF data.
+            - uei (str): The unique identifier for the PDF.
+        output_dir (str): The directory where PDFs will be saved.
     """
     # First check that we are only downloading pdfs that haven't already been downloaded
 
