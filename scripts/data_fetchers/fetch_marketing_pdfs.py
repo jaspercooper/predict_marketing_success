@@ -5,6 +5,7 @@ import re
 import base64
 # Import pathlib for path handling
 from pathlib import Path
+import os
 
 def fetch_raw_pdf_data(uei):
     """
@@ -25,9 +26,13 @@ def fetch_raw_pdf_data(uei):
         response.raise_for_status()
 
         # Extract `gon.pdf_data` using regex
-        match = re.search(r'gon\.pdf_data\s*=\s*"([^"]+)"', response.text)
+        match = re.search(pattern=r'gon\.pdf_data\s*=\s*"([^"]+)"', string = response.text)
         if not match:
-            raise ValueError(f"Could not find `gon.pdf_data` in the page for UEI {uei}.")
+            no_statement = re.search(pattern= 'No Capability Statement uploaded for UEI', string = response.text)
+            if no_statement:
+                return({"pdf_data_base64": f"No Capability Statement uploaded for UEI {uei}", "uei": uei})
+            else:
+                raise ValueError(f"Could not find `gon.pdf_data` in the page for UEI {uei}.")
 
         pdf_data_base64 = match.group(1)
 
@@ -85,18 +90,36 @@ def output_pdf(binary_pdf_data, output_dir = f"{RAW_DATA_DIR}/raw_pdfs/"):
         return None
 
 
-def fetch_capability_statement_pdfs(ueis):
+# need to add two types of debugging:
+# Firstly, should not loop through PDFs that have already been downloaded.
+# Secondly, should have error handling for when no cap statement exists
+
+def fetch_capability_statement_pdfs(ueis, output_dir = f"{RAW_DATA_DIR}/raw_pdfs/"):
     """
     This function is a wrapper for those above, that takes multiple UEIs and returns their pdfs
 
     Args:
         ueis (str): A list of UEIs
     """
-    # loop through uei list
-    for uei in ueis:
+    # First check that we are only downloading pdfs that haven't already been downloaded
+
+    # Get list of downloaded pdfs
+    downloaded_pdfs_raw = os.listdir(output_dir)
+    # Remove .pdf extension to get uei
+    downloaded_pdfs = [filename.replace('.pdf', '') for filename in downloaded_pdfs_raw]
+    # Use comprehension to create list of UEIs that are not in the downloaded PDFs list
+    ueis_to_download = [uei for uei in ueis if uei not in downloaded_pdfs]
+
+    # loop through list of UEIs to download
+    for uei in ueis_to_download:
         # Get the raw data from html
         raw_base = fetch_raw_pdf_data(uei)
-        # Convert it to binary
-        raw_binary = extract_pdf_from_base64(raw_base)
-        # Extract the binary to pdf
-        output_pdf(raw_binary)
+        # Check if there is no statement
+        no_statement = re.search(pattern='No Capability Statement uploaded for UEI', string=raw_base["pdf_data_base64"])
+        if no_statement:
+            print(raw_base["pdf_data_base64"])
+        else:
+            # Convert it to binary
+            raw_binary = extract_pdf_from_base64(raw_base)
+            # Extract the binary to pdf
+            output_pdf(raw_binary)
